@@ -7,8 +7,6 @@ find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   geometry_msgs
   message_filters
-  nodelet
-  pluginlib
   roscpp
   sensor_msgs
   std_msgs
@@ -21,8 +19,6 @@ catkin_package(
   CATKIN_DEPENDS
     geometry_msgs
     message_filters
-    nodelet
-    pluginlib
     roscpp
     sensor_msgs
     std_msgs
@@ -44,16 +40,13 @@ add_library(complementary_filter
 )
 target_link_libraries(complementary_filter ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-# create complementary_filter_nodelet library
-add_library (complementary_filter_nodelet src/complementary_filter_nodelet.cpp)
-target_link_libraries(complementary_filter_nodelet complementary_filter ${catkin_LIBRARIES})
 
 # create complementary_filter_node executable
 add_executable(complementary_filter_node
   src/complementary_filter_node.cpp)
 target_link_libraries(complementary_filter_node complementary_filter ${catkin_LIBRARIES})
 
-install(TARGETS complementary_filter complementary_filter_nodelet
+install(TARGETS complementary_filter
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
@@ -70,8 +63,4 @@ install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
-)
-
-install(FILES complementary_filter_nodelet.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

@@ -25,15 +25,11 @@
 #include "imu_filter_madgwick/imu_filter_ros.h"
 #include "imu_filter_madgwick/stateless_orientation.h"
 #include "geometry_msgs/TransformStamped.h"
-#include "geometry_msgs/PoseStamped.h"
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 
 ImuFilterRos::ImuFilterRos(ros::NodeHandle nh, ros::NodeHandle nh_private)
-    : nh_(nh),
-      nh_private_(nh_private),
-      initialized_(false),
-      tf_listener_(tf_buffer_)
+    : nh_(nh), nh_private_(nh_private), initialized_(false)
 {
     ROS_INFO("Starting ImuFilter");
 
@@ -125,10 +121,6 @@ ImuFilterRos::ImuFilterRos(ros::NodeHandle nh, ros::NodeHandle nh_private)
 
         rpy_raw_debug_publisher_ = nh_.advertise<geometry_msgs::Vector3Stamped>(
             ros::names::resolve("imu") + "/rpy/raw", 5);
-
-        orientation_filtered_publisher_ =
-            nh_private.advertise<geometry_msgs::PoseStamped>(
-                ros::names::resolve("imu") + "/orientation_filtered", 5);
     }
 
     // **** register subscribers
@@ -415,36 +407,7 @@ void ImuFilterRos::publishFilteredMsg(const ImuMsg::ConstPtr& imu_msg_raw)
 
         rpy.header = imu_msg_raw->header;
         rpy_filtered_debug_publisher_.publish(rpy);
-
-        publishOrientationFiltered(imu_msg);
     }
-}
-
-void ImuFilterRos::publishOrientationFiltered(const ImuMsg::ConstPtr& imu_msg)
-{
-    geometry_msgs::PoseStamped pose_msg;
-    pose_msg.header.stamp = imu_msg->header.stamp;
-    pose_msg.header.frame_id = fixed_frame_;
-    pose_msg.pose.orientation = imu_msg->orientation;
-
-    // get the current transform from the fixed frame to the imu frame
-    geometry_msgs::TransformStamped transform;
-    try
-    {
-        transform = tf_buffer_.lookupTransform(
-            fixed_frame_, imu_msg->header.frame_id, imu_msg->header.stamp,
-            ros::Duration(0.1));
-    } catch (tf2::TransformException& ex)
-    {
-        ROS_WARN("%s", ex.what());
-        return;
-    }
-
-    pose_msg.pose.position.x = transform.transform.translation.x;
-    pose_msg.pose.position.y = transform.transform.translation.y;
-    pose_msg.pose.position.z = transform.transform.translation.z;
-
-    orientation_filtered_publisher_.publish(pose_msg);
 }
 
 void ImuFilterRos::publishRawMsg(const ros::Time& t, float roll, float pitch,
@@ -482,11 +445,13 @@ void ImuFilterRos::checkTopicsTimerCallback(const ros::TimerEvent&)
 {
     if (use_mag_)
         ROS_WARN_STREAM("Still waiting for data on topics "
-                        << imu_subscriber_->getTopic() << " and "
-                        << mag_subscriber_->getTopic() << "...");
+                        << ros::names::resolve("imu") << "/data_raw"
+                        << " and " << ros::names::resolve("imu") << "/mag"
+                        << "...");
     else
         ROS_WARN_STREAM("Still waiting for data on topic "
-                        << imu_subscriber_->getTopic() << "...");
+                        << ros::names::resolve("imu") << "/data_raw"
+                        << "...");
 }
 
 void ImuFilterRos::reset()
